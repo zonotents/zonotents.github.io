@@ -535,7 +535,7 @@ function demoCollision() {
     const t = U.get.t(), zt = res.zts[t], row = res.rows[t];
     U.out("t", t);
     view.clear(); view.grid(1);
-    // In the oblique view the part of the solid over the obstacle is purple, as the overlap in the paper's Fig. 2.
+    // In the oblique view the part of the solid over the obstacle is purple, the overlap color.
     const purple = css("--purple"), OH = res.OH;
     const colorAt = view.oblique ? (x, y) => (Z.insideH(OH, [x, y]) ? purple : null) : null;
     drawLayers(view, [layerOf(zt, { colorAt })], () => {

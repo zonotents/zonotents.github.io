@@ -32,5 +32,7 @@ python3 -m http.server 8000
 2. Push this folder to its `main` branch.
 3. Under Settings → Pages, choose "Deploy from a branch", with branch `main` and folder `/`.
 
-Once the paper is public, update the Paper and Code buttons and the BibTeX entry in `index.html`. Both buttons are
-disabled for now and marked "soon".
+Until the paper is public, the page does not mention it: the Paper button, the Cite section (with its nav link), and
+the paper's section numbers on the experiment cards were removed on 2026-11-19. To restore them, copy them back from
+commit 233187c and add the arXiv link and identifier. The Code button stays disabled and marked "soon" until the code
+is public.
