@@ -148,8 +148,9 @@ function demoExplore() {
   });
 
   const compute = () => {
-    const S = covFrom(U.get.s1(), U.get.s2(), U.get.th());
-    st.zt = Z.zonotent(Z.zonotope(st.c, st.G), st.mu, S, U.get.eta());
+    const S = covFrom(U.get.s1(), U.get.s2(), U.get.th()), z = Z.zonotope(st.c, st.G);
+    st.mu = Z.clampMean(z, st.mu, S, 5);  // keeps the Gaussian's mass on Z computable (see Z.clampMean)
+    st.zt = Z.zonotent(z, st.mu, S, U.get.eta());
     st.samples = Z.sample(st.zt, 700, Z.mulberry32(7));
     st.mom = Z.moments(st.zt);
   };
@@ -226,28 +227,36 @@ function demoMinkowski() {
   });
   U.set("eta1", 0); U.set("eta2", 0);
 
-  // The exact density of X + Y on a grid: conv(s) = integral over Z1 ∩ (s - Z2) of f1(p) f2(s - p) dp, by quadrature
-  // on that convex polygon, where the integrand is smooth.
+  // The exact density of X + Y on a grid: conv(s) = integral over Q = Z1 ∩ (s - Z2) of f1(p) f2(s - p) dp, in
+  // closed form. Each f is w + alpha N, so the integrand has four terms: a constant (the area of Q), N1(p),
+  // N2(s - p), and N1(p) N2(s - p) = N(s; mu1 + mu2, S1 + S2) N(p; m*, S*), each a Gaussian mass on the polygon Q.
   function convolution(zt1, zt2, sum, N) {
     const bb = Z.bbox(sum.P), hx = (bb.x1 - bb.x0) / N, hy = (bb.y1 - bb.y0) / N;
     const vals = new Float64Array(N * N);
     const negP2 = zt2.P.map((p) => [-p[0], -p[1]]);  // -Z2 (a point reflection keeps the counterclockwise order)
+    const m = zt1.mass * zt2.mass;
+    const c11 = m * zt1.w * zt2.w, c12 = m * zt1.w * zt2.alpha, c21 = m * zt1.alpha * zt2.w, c22 = m * zt1.alpha * zt2.alpha;
+    const S1i = M.inv(zt1.S), S2i = M.inv(zt2.S), Sstar = M.sym(M.inv(M.add(S1i, S2i)));
+    const S1imu1 = M.vec(S1i, zt1.mu), Nsum = Z.makeGauss(V.add(zt1.mu, zt2.mu), M.add(zt1.S, zt2.S));
     for (let j = 0; j < N; j++) {
       for (let i = 0; i < N; i++) {
         const s = [bb.x0 + (i + 0.5) * hx, bb.y0 + (j + 0.5) * hy];
         if (!Z.insideH(sum.H, s)) continue;
         const Q = Z.clipPolygon(zt1.P, negP2.map((p) => V.add(p, s)));
         if (Q.length < 3) continue;
-        const q = Z.polygonQuadrature(Q, 6);
-        let v = 0;
-        for (let k = 0; k < q.pts.length; k++) {
-          const p = q.pts[k];
-          v += q.wts[k] * Z.density(zt1, p[0], p[1]) * Z.density(zt2, s[0] - p[0], s[1] - p[1]);
+        const s_mu2 = V.sub(s, zt2.mu);
+        let v = c11 > 0 ? c11 * Math.abs(Z.polygonArea(Q)) : 0;
+        if (c12 > 0) v += c12 * Z.gaussMassPolygon(Q, s_mu2, zt2.S);
+        if (c21 > 0) v += c21 * Z.gaussMassPolygon(Q, zt1.mu, zt1.S);
+        if (c22 > 0) {
+          const k = Nsum(s[0], s[1]);
+          if (k > 0) v += c22 * k * Z.gaussMassPolygon(Q, M.vec(Sstar, V.add(S1imu1, M.vec(S2i, s_mu2))), Sstar);
         }
         vals[j * N + i] = v;
       }
     }
     const at = (x, y) => {
+      if (!Z.insideH(sum.H, [x, y], 1e-9)) return 0;  // the grid's edge cells would otherwise repeat past the support
       const u = (x - bb.x0) / hx - 0.5, w = (y - bb.y0) / hy - 0.5;
       const i = Math.max(0, Math.min(N - 2, Math.floor(u))), j = Math.max(0, Math.min(N - 2, Math.floor(w)));
       const a = Math.min(Math.max(u - i, 0), 1), b = Math.min(Math.max(w - j, 0), 1);

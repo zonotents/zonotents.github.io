@@ -1,6 +1,6 @@
 // zono.js: planar zonotopes and Gaussian zonotents for the browser demos.
 // A JavaScript port of the 2D cases of the zonotents Python package (src/zonotents): the same definitions and
-// algorithms, with quadrature on a triangulation of the zonotope instead of its parallelotope tiling.
+// algorithms, with Gaussian masses and moments on polygons in closed form (Owen's T and the divergence theorem).
 // Vectors are [x, y]; matrices are [[a, b], [c, d]] (rows); a zonotope is {c: [x, y], G: [[gx, gy], ...]}.
 
 export const V = {
@@ -174,13 +174,23 @@ export function makeGauss(mu, S) {  // a fast pdf closure
   return (x, y) => { const u = x - m0, v = y - m1; return k * Math.exp(-0.5 * (a * u * u + 2 * b * u * v + c * v * v)); };
 }
 
-export function erf(x) {  // Abramowitz-Stegun 7.1.26; |error| < 1.5e-7
-  const s = Math.sign(x); x = Math.abs(x);
-  const t = 1 / (1 + 0.3275911 * x);
-  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
-  return s * y;
+// erf and erfc to about double precision: a series with positive terms for |x| < 3 (no cancellation) and the
+// continued fraction of erfc beyond it.
+function erfcPos(x) {  // x >= 0
+  if (x < 3) {
+    let term = x, sum = x;
+    for (let n = 1; n < 200 && term > 1e-17 * sum; n++) { term *= 2 * x * x / (2 * n + 1); sum += term; }
+    return 1 - 2 / Math.sqrt(Math.PI) * Math.exp(-x * x) * sum;
+  }
+  if (x > 27) return 0;
+  let f = x;  // erfc(x) = exp(-x^2) / sqrt(pi) / (x + (1/2) / (x + 1 / (x + (3/2) / (x + ...))))
+  for (let k = 120; k >= 1; k--) f = x + (k / 2) / f;
+  return Math.exp(-x * x) / Math.sqrt(Math.PI) / f;
 }
-export const Phi = (x) => 0.5 * (1 + erf(x / Math.SQRT2));
+export function erfc(x) { return x >= 0 ? erfcPos(x) : 2 - erfcPos(-x); }
+export function erf(x) { return x >= 0 ? 1 - erfcPos(x) : erfcPos(-x) - 1; }
+export const Phi = (x) => (x >= 0 ? 1 - 0.5 * erfcPos(x / Math.SQRT2) : 0.5 * erfcPos(-x / Math.SQRT2));
+export const PhiUpper = (x) => Phi(-x);  // 1 - Phi(x) without cancellation for large x
 
 export function PhiInv(p) {  // Acklam's rational approximation, then one Newton step
   const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
@@ -198,8 +208,11 @@ export function PhiInv(p) {  // Acklam's rational approximation, then one Newton
     const q = p - 0.5, r = q * q;
     x = (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
   }
-  const e = Phi(x) - p;
-  return x - e * Math.sqrt(2 * Math.PI) * Math.exp(x * x / 2);
+  for (let it = 0; it < 2; it++) {  // Newton steps against the accurate Phi
+    const e = (p > 0.5 ? -(PhiUpper(x) - (1 - p)) : Phi(x) - p);
+    x -= e * Math.sqrt(2 * Math.PI) * Math.exp(x * x / 2);
+  }
+  return x;
 }
 
 export function randn(rng = Math.random) {
@@ -220,8 +233,8 @@ export function refresh(zt) {
   zt.P = vertices(zt.z);
   zt.H = halfspaces(zt.P);
   zt.area = Math.abs(polygonArea(zt.P));
-  zt.quad = polygonQuadrature(zt.P);
-  zt.nu = gaussMassQ(zt.quad, zt.mu, zt.S);
+  zt.quad = polygonQuadrature(zt.P, 6);  // for the wall's moments: exact for polynomials of low degree
+  zt.nu = gaussMassPolygon(zt.P, zt.mu, zt.S);
   zt.w = zt.eta / zt.area;
   zt.alpha = zt.eta >= 1 ? 0 : (1 - zt.eta) / zt.nu;
   zt.pdf = makeGauss(zt.mu, zt.S);
@@ -236,39 +249,120 @@ export function density(zt, x, y) {  // includes the relaxed mass
 
 export function peak(zt) { return zt.mass * (zt.w + zt.alpha * zt.pdf(zt.mode[0], zt.mode[1])); }
 
-export function gaussMassQ(quad, mu, S) {
-  const f = makeGauss(mu, S);
-  let s = 0;
-  for (let i = 0; i < quad.pts.length; i++) s += quad.wts[i] * f(quad.pts[i][0], quad.pts[i][1]);
-  return s;
+// ---------- Exact Gaussian integrals over a convex polygon ----------
+// In whitened coordinates y = L^-1 (x - mu), the mass is a signed sum over edges of the triangles (0, A, B), each
+// split at the foot of the perpendicular into right triangles whose mass is atan(a) / 2pi - T(h, a), with Owen's
+// T function (the planar Gaussian mass of the paper). The first and second moments follow from the divergence
+// theorem, since grad phi(y) = -y phi(y), as integrals of a 1D Gaussian along each edge.
+
+const INV_2PI = 1 / (2 * Math.PI), INV_SQRT_2PI = 1 / Math.sqrt(2 * Math.PI);
+const phi1 = (t) => INV_SQRT_2PI * Math.exp(-0.5 * t * t);
+
+export function owenT(h, a) {  // h >= 0, a >= 0
+  if (a <= 0 || h > 38) return 0;
+  if (a <= 1) {
+    const G = gl(24);
+    let s = 0;
+    for (let i = 0; i < G.x.length; i++) { const x = a * G.x[i], q = 1 + x * x; s += G.w[i] * Math.exp(-0.5 * h * h * q) / q; }
+    return s * a * INV_2PI;
+  }
+  // T(h, a) + T(ah, 1/a) = (Phi(h) Q(ah) + Phi(ah) Q(h)) / 2 for h >= 0, with Q the upper tail
+  const ah = a * h;
+  return 0.5 * (Phi(h) * PhiUpper(ah) + Phi(ah) * PhiUpper(h)) - owenT(ah, 1 / a);
 }
 
-export function gaussMassPolygon(P, mu, S) { return gaussMassQ(polygonQuadrature(P), mu, S); }
+const rightTri = (h, t) => (t <= 0 ? 0 : Math.atan2(t, h) * INV_2PI - owenT(h, t / h));  // h > 0
+const signedRight = (h, t) => (t >= 0 ? rightTri(h, t) : -rightTri(h, -t));
+const dPhi = (a, b) => (a >= 0 ? PhiUpper(a) - PhiUpper(b) : b <= 0 ? Phi(b) - Phi(a) : 1 - PhiUpper(b) - Phi(a));  // Phi(b) - Phi(a), a <= b
 
-// Mean and covariance of the normalized density by quadrature (the wall and the Gaussian mixed by eta).
+function whiten(P, mu, S) {
+  const L = M.chol(S), Li = M.inv(L);
+  let Y = P.map((p) => M.vec(Li, V.sub(p, mu)));
+  if (polygonArea(Y) < 0) Y = Y.slice().reverse();
+  return { Y, L };
+}
+
+// Standard normal mass of a counterclockwise convex polygon Y; with moments, also its first and second moments.
+function stdNormalPolygon(Y, withMoments) {
+  let m0 = 0;
+  const m1 = [0, 0], m2 = [[0, 0], [0, 0]];
+  for (let i = 0; i < Y.length; i++) {
+    const A = Y[i], B = Y[(i + 1) % Y.length], d = V.sub(B, A), len = V.norm(d);
+    if (len < 1e-300) continue;
+    const u = V.scale(d, 1 / len), c = V.cross(A, u), h = Math.abs(c);
+    const tA = V.dot(A, u), tB = tA + len;
+    if (h > 1e-300) m0 += Math.sign(c) * (signedRight(h, tB) - signedRight(h, tA));
+    if (withMoments) {
+      const n = [u[1], -u[0]], F = V.sub(A, V.scale(u, tA)), ph = phi1(h);
+      const I0 = ph * dPhi(tA, tB);                                                  // integral of phi ds
+      const I1 = V.scale(V.add(V.scale(F, dPhi(tA, tB)), V.scale(u, phi1(tA) - phi1(tB))), ph);  // of y phi ds
+      m1[0] -= n[0] * I0; m1[1] -= n[1] * I0;
+      m2[0][0] -= I1[0] * n[0]; m2[0][1] -= I1[0] * n[1]; m2[1][0] -= I1[1] * n[0]; m2[1][1] -= I1[1] * n[1];
+    }
+  }
+  m2[0][0] += m0; m2[1][1] += m0;
+  return { m0, m1, m2: M.sym(m2) };
+}
+
+export function gaussMassPolygon(P, mu, S) {
+  if (P.length < 3) return 0;
+  const { Y } = whiten(P, mu, S);
+  return Math.max(stdNormalPolygon(Y, false).m0, 0);
+}
+
+// Raw Gaussian integrals over a convex polygon: nu = int N, s1 = int x N, s2 = int x x^T N.
+export function gaussPolygonMoments(P, mu, S) {
+  const { Y, L } = whiten(P, mu, S);
+  const { m0, m1, m2 } = stdNormalPolygon(Y, true);
+  const Lm1 = M.vec(L, m1);
+  const s1 = V.add(V.scale(mu, m0), Lm1);
+  const s2 = M.add(M.add(M.mul(M.mul(L, m2), M.T(L)), M.add(M.outer(mu, Lm1), M.outer(Lm1, mu))), M.scale(M.outer(mu, mu), m0));
+  return { nu: m0, s1, s2: M.sym(s2) };
+}
+
+// Mean and covariance of the normalized density (the wall and the Gaussian mixed by eta): the wall's moments by
+// quadrature, which is exact for polynomials, and the Gaussian's in closed form.
 export function moments(zt) {
-  return mixtureMoments(zt.quad, zt.area, zt.eta, zt.mu, zt.S);
+  return mixtureMoments(zt.P, zt.quad, zt.area, zt.eta, zt.mu, zt.S);
 }
 
-function mixtureMoments(quad, A, eta, mu, S) {
-  const f = makeGauss(mu, S);
-  let g0 = 0, g1 = [0, 0], u1 = [0, 0];
-  let g2 = [[0, 0], [0, 0]], u2 = [[0, 0], [0, 0]];
-  for (let i = 0; i < quad.pts.length; i++) {
-    const p = quad.pts[i], w = quad.wts[i], gw = w * f(p[0], p[1]);
-    g0 += gw;
-    g1[0] += gw * p[0]; g1[1] += gw * p[1];
+function mixtureMoments(P, quad, A, eta, mu, S) {
+  let u1 = [0, 0], u2 = [[0, 0], [0, 0]];
+  for (let i = 0; eta > 0 && i < quad.pts.length; i++) {
+    const p = quad.pts[i], w = quad.wts[i];
     u1[0] += w * p[0]; u1[1] += w * p[1];
-    g2[0][0] += gw * p[0] * p[0]; g2[0][1] += gw * p[0] * p[1]; g2[1][1] += gw * p[1] * p[1];
     u2[0][0] += w * p[0] * p[0]; u2[0][1] += w * p[0] * p[1]; u2[1][1] += w * p[1] * p[1];
   }
-  const mG = V.scale(g1, 1 / g0), mU = V.scale(u1, 1 / A);
-  const EG = [[g2[0][0] / g0, g2[0][1] / g0], [g2[0][1] / g0, g2[1][1] / g0]];
+  const mU = V.scale(u1, 1 / A);
   const EU = [[u2[0][0] / A, u2[0][1] / A], [u2[0][1] / A, u2[1][1] / A]];
   const g = eta >= 1 ? 0 : 1 - eta;
-  const m = V.add(V.scale(mU, 1 - g), V.scale(mG, g));
-  const E = M.add(M.scale(EU, 1 - g), M.scale(EG, g));
-  return { mean: m, cov: M.sym(M.add(E, M.scale(M.outer(m, m), -1))), nu: g0 };
+  let m = mU, E = EU, nu = NaN;
+  if (g > 0) {
+    const G = gaussPolygonMoments(P, mu, S);
+    nu = G.nu;
+    const mG = V.scale(G.s1, 1 / G.nu), EG = M.scale(G.s2, 1 / G.nu);
+    m = V.add(V.scale(mU, 1 - g), V.scale(mG, g));
+    E = M.add(M.scale(EU, 1 - g), M.scale(EG, g));
+  }
+  return { mean: m, cov: M.sym(M.add(E, M.scale(M.outer(m, m), -1))), nu };
+}
+
+// The mean moved toward Z, if needed, so its Mahalanobis distance to Z is at most dmax. The point of Z nearest
+// the mean stays the same (Z is convex), so the density's shape near the mode is kept while the Gaussian's mass
+// on Z stays large enough to compute with.
+export function clampMean(z, mu, S, dmax = 5) {
+  const P = vertices(z);
+  if (P.length < 3 || insideH(halfspaces(P), mu)) return [...mu];
+  const L = M.chol(S), Li = M.inv(L), Y = P.map((p) => M.vec(Li, V.sub(p, mu)));
+  let best = null, bd = Infinity;
+  for (let i = 0; i < Y.length; i++) {
+    const a = Y[i], b = Y[(i + 1) % Y.length], e = V.sub(b, a);
+    const t = Math.min(1, Math.max(0, -V.dot(a, e) / V.dot(e, e)));
+    const q = V.add(a, V.scale(e, t)), d = V.norm(q);
+    if (d < bd) { bd = d; best = q; }
+  }
+  if (bd <= dmax) return [...mu];
+  return V.add(mu, M.vec(L, V.scale(best, 1 - dmax / bd)));
 }
 
 // The point of Z nearest the mean in the Mahalanobis distance: the mean if it is in Z, else the nearest point of
@@ -295,11 +389,11 @@ export function affineZt(zt, A, b = [0, 0]) {  // exact (affine maps of Gaussian
 // The Gaussian zonotent on z with no wall whose own mean and covariance are (mean, cov): the fixed-point
 // iteration of moments.matched_gaussian (add the moment residual, halving the step to stay positive definite).
 export function matchedGaussian(z, mean, cov, { tol = 1e-6, maxIter = 200 } = {}) {
-  const P = vertices(z), quad = polygonQuadrature(P), A = Math.abs(polygonArea(P));
+  const P = vertices(z), A = Math.abs(polygonArea(P));
   const scale = Math.sqrt(cov[0][0] + cov[1][1]);
   let mu = [...mean], S = M.sym(cov), res = Infinity, it = 0, converged = false;
   for (it = 0; it <= maxIter; it++) {
-    const m = mixtureMoments(quad, A, 0, mu, S);
+    const m = mixtureMoments(P, null, A, 0, mu, S);
     const dm = V.sub(mean, m.mean), dS = M.add(cov, M.scale(m.cov, -1));
     res = Math.max(Math.abs(dm[0]) / scale, Math.abs(dm[1]) / scale,
       Math.max(Math.abs(dS[0][0]), Math.abs(dS[0][1]), Math.abs(dS[1][1])) / (scale * scale));
@@ -332,7 +426,7 @@ export function minkowskiMomentSum(zt1, zt2, opts) {
 
 export function sample(zt, n, rng = Math.random) {
   const out = [];
-  const L = M.chol(zt.S), bb = bbox(zt.P);
+  const L = M.chol(zt.S), bb = bbox(zt.P), boxArea = (bb.x1 - bb.x0) * (bb.y1 - bb.y0);
   let nWall = 0;
   for (let i = 0; i < n; i++) if (rng() < zt.eta) nWall++;
   // wall: uniform by rejection from the bounding box
@@ -340,19 +434,35 @@ export function sample(zt, n, rng = Math.random) {
     const p = [bb.x0 + (bb.x1 - bb.x0) * rng(), bb.y0 + (bb.y1 - bb.y0) * rng()];
     if (insideH(zt.H, p)) out.push(p);
   }
-  // Gaussian: rejection from N(mu, Sigma) while it accepts often enough, else from the box with the peak as envelope
-  const need = n - nWall;
-  let got = 0, tries = 0;
+  if (zt.eta >= 1) return out;
+  // Gaussian part, by rejection from whichever envelope accepts most often: N(mu, Sigma) itself (acceptance nu);
+  // the bounding box under the peak; or, when mu is outside Z, N(mu, Sigma) restricted to the half-plane that
+  // supports Z at the mode, which contains Z (acceptance nu / Q(d), with d the Mahalanobis distance to Z).
   const fmax = zt.pdf(zt.mode[0], zt.mode[1]);
-  while (got < need) {
+  const Li = M.inv(L), q = M.vec(Li, V.sub(zt.mode, zt.mu)), d = V.norm(q);
+  const accGauss = zt.nu, accBox = zt.nu / (fmax * boxArea), accTail = d > 1e-9 ? zt.nu / PhiUpper(d) : 0;
+  const e = d > 1e-9 ? V.scale(q, 1 / d) : [1, 0], ePerp = [-e[1], e[0]];
+  const lam = (d + Math.sqrt(d * d + 4)) / 2;  // exponential envelope for N(0, 1) truncated to [d, inf)
+  const tailNormal = () => {
+    for (;;) {
+      const t = d - Math.log(1 - rng()) / lam;
+      if (rng() <= Math.exp(-0.5 * (t - lam) * (t - lam))) return t;
+    }
+  };
+  const kind = accTail >= Math.max(accGauss, accBox) ? "tail" : accGauss >= accBox ? "gauss" : "box";
+  let got = 0;
+  const need = n - nWall;
+  for (let tries = 0; got < need && tries < 5e6; tries++) {
     let p;
-    if (zt.nu > 0.02) {
-      p = V.add(zt.mu, M.vec(L, [randn(rng), randn(rng)]));
-      if (!insideH(zt.H, p)) continue;
+    if (kind === "gauss") p = V.add(zt.mu, M.vec(L, [randn(rng), randn(rng)]));
+    else if (kind === "tail") {
+      const y = V.add(V.scale(e, tailNormal()), V.scale(ePerp, randn(rng)));
+      p = V.add(zt.mu, M.vec(L, y));
     } else {
       p = [bb.x0 + (bb.x1 - bb.x0) * rng(), bb.y0 + (bb.y1 - bb.y0) * rng()];
-      if (!insideH(zt.H, p) || rng() * fmax > zt.pdf(p[0], p[1])) { if (++tries > 2e6) break; continue; }
+      if (rng() * fmax > zt.pdf(p[0], p[1])) continue;
     }
+    if (!insideH(zt.H, p)) continue;
     out.push(p); got++;
   }
   return out;
@@ -369,7 +479,7 @@ export function mulberry32(seed) {
 
 // ---------- Probabilistic order reduction ----------
 
-// Mass of zt's density on a convex polygon Q inside its support (exact for the wall, quadrature for the Gaussian).
+// Mass of zt's density on a convex polygon Q inside its support (exact for both the wall and the Gaussian).
 export function massOnPolygon(zt, Q) {
   if (Q.length < 3) return 0;
   const a = Math.abs(polygonArea(Q));
@@ -459,11 +569,41 @@ function frameWidths(G, F) {
   return w;
 }
 
-function momentFrame(zt) {  // the square root of Sigma whose interval hull of Z is smallest ("best" in the package)
+// The square root L of Sigma whose interval hull of Z is smallest, over the package's six kinds ("best" in
+// reduction_mass.covariance_square_root): Cholesky, symmetric, PCA, and Cholesky times a rotation from the polar
+// factor or QR of the two template generators, or from the principal axes of all generators (whitened).
+function eigSym(S) {  // eigenvectors of a symmetric 2x2 as columns, with eigenvalues
+  const a = S[0][0], b = S[0][1], c = S[1][1], th = 0.5 * Math.atan2(2 * b, a - c);
+  const v1 = [Math.cos(th), Math.sin(th)], v2 = [-Math.sin(th), Math.cos(th)];
+  const l1 = V.dot(v1, M.vec(S, v1)), l2 = V.dot(v2, M.vec(S, v2));
+  return { Vm: [[v1[0], v2[0]], [v1[1], v2[1]]], l: [l1, l2] };
+}
+function squareRoots(zt) {
+  const S = zt.S, Lc = M.chol(zt.S), Li = M.inv(Lc);
+  const out = [Lc, M.sqrtSym(S)];
+  const E = eigSym(S);
+  out.push([[E.Vm[0][0] * Math.sqrt(E.l[0]), E.Vm[0][1] * Math.sqrt(E.l[1])], [E.Vm[1][0] * Math.sqrt(E.l[0]), E.Vm[1][1] * Math.sqrt(E.l[1])]]);
+  const Gw = zt.z.G.map((g) => M.vec(Li, g));
+  const gram = Gw.reduce((A, g) => M.add(A, M.outer(g, g)), [[0, 0], [0, 0]]);
+  out.push(M.mul(Lc, eigSym(gram).Vm));
+  const idx = templateIndices(Gw, 2);
+  if (idx.length === 2) {
+    const t1 = Gw[idx[0]], t2 = Gw[idx[1]];
+    const a = t1[0], b = t2[0], c = t1[1], dd = t2[1];  // the template T = [t1 t2] as columns
+    const Qp = M.det([[a, b], [c, dd]]) > 0 ? [[a + dd, b - c], [c - b, a + dd]] : [[a - dd, b + c], [b + c, dd - a]];
+    const k = Math.hypot(Qp[0][0], Qp[1][0]);
+    out.push(M.scale(Qp, 1 / k));  // polar factor: the nearest orthogonal matrix to T
+    out[out.length - 1] = M.mul(Lc, out[out.length - 1]);
+    const q1 = V.scale(t1, 1 / V.norm(t1)), r2 = V.sub(t2, V.scale(q1, V.dot(q1, t2))), q2 = V.scale(r2, 1 / V.norm(r2));
+    out.push(M.mul(Lc, [[q1[0], q2[0]], [q1[1], q2[1]]]));  // QR
+  }
+  return out;
+}
+function momentFrame(zt) {
   let best = null;
-  for (const L of [M.chol(zt.S), M.sqrtSym(zt.S)]) {
+  for (const L of squareRoots(zt)) {
     const w = frameWidths(zt.z.G, L), key = Math.log(w[0]) + Math.log(w[1]);
-    if (!best || key < best.key) best = { L, w, key };
+    if (isFinite(key) && (!best || key < best.key)) best = { L, w, key };
   }
   return best;
 }
@@ -482,7 +622,7 @@ export function outerReduction(zt) {
 export function freeReduction(zt, alpha) {
   const { L } = momentFrame(zt);
   const Lc = M.chol(zt.S), off = M.vec(M.inv(Lc), V.sub(zt.z.c, zt.mu));
-  const symmetric = Math.max(Math.abs(off[0]), Math.abs(off[1])) <= 1e-7;  // looser than the package's 1e-9: quadrature rounding
+  const symmetric = Math.max(Math.abs(off[0]), Math.abs(off[1])) <= 1e-7;  // looser than the package's 1e-9: the moment-matching tolerance
   const alphaUsed = symmetric ? alpha : alpha * zt.nu;
   const r = PhiInv((1 + Math.sqrt(1 - alphaUsed)) / 2);
   const nuCube = (2 * Phi(r) - 1) ** 2;
@@ -491,5 +631,5 @@ export function freeReduction(zt, alpha) {
   const P = vertices(z);
   const actual = gaussMassPolygon(clipPolygon(zt.P, P), zt.mu, zt.S) / zt.nu;  // nu(Z ∩ Z') / nu(Z)
   return { z, P, kept: share, actual, radius: r, symmetric, certificate: symmetric ? "symmetric" : "halfspace",
-    reached: share >= (1 - alpha) * (1 - 1e-12), certified: true, contains: false, inside: false, area: area(z) };
+    reached: share >= (1 - alpha) * (1 - 1e-9), certified: true, contains: false, inside: false, area: area(z) };
 }

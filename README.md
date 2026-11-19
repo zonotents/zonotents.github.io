@@ -19,8 +19,8 @@ python3 -m http.server 8000
   `#3b95c4` for the system, red `#f81b02` for the obstacle, and purple `#b469c0` for their overlap.
 - `js/zono.js`: a JavaScript port of the 2D cases of the zonotents Python package. It covers zonotopes, Gaussian
   zonotents, moments, the moment-matched sum (`matched_gaussian`), sampling, and the outer, inner, and free
-  reductions (`outer_reduction`, `probabilistic_reduction`, `free_reduction`). Integrals use Gauss–Legendre
-  quadrature on a triangulation instead of Owen's T.
+  reductions (`outer_reduction`, `probabilistic_reduction`, `free_reduction`). Gaussian masses on polygons use
+  Owen's T, and Gaussian moments on polygons use the divergence theorem, both in closed form.
 - `js/plot.js`: the canvas helpers (density rasters, polygons, draggable handles).
 - `js/main.js`: the four demos, the theme toggle, and KaTeX.
 - `media/`: the slosh video (`outputs/paper/video/slosh_video.mp4`) and PNGs rendered at 400 dpi from the paper's

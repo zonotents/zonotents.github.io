@@ -414,11 +414,13 @@ export class View {
   }
 }
 
-// Coalesce redraws to one per frame.
+// Coalesce redraws to one per frame. When several requests land in one frame, the one that needs the most work
+// wins, so a light redraw (hover, theme, resize, refine) never hides a change that needs a recompute.
+const PRIORITY = { drop: 5, input: 4, drag: 3, fine: 2 };
 export function scheduler(fn) {
   let queued = false, reason = null;
   return (r) => {
-    reason = reason === "drop" ? reason : r;
+    if (reason === null || (PRIORITY[r] || 1) >= (PRIORITY[reason] || 1)) reason = r;
     if (queued) return;
     queued = true;
     requestAnimationFrame(() => { queued = false; const rr = reason; reason = null; fn(rr); });
