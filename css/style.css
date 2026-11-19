@@ -194,3 +194,5 @@ nav.toc .wrap { align-items: center; }
 .scroll-cue svg { width: 20px; height: 20px; animation: cue-bob 1.8s ease-in-out infinite; }
 @keyframes cue-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
 @media (prefers-reduced-motion: reduce) { .scroll-cue svg { animation: none; } }
+
+.nowrap { white-space: nowrap; }

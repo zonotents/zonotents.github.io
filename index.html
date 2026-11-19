@@ -30,8 +30,8 @@
 
 <nav class="toc" aria-label="Sections">
   <div class="wrap">
-    <a href="#overview">Overview</a>
     <a href="#zonotent">What is a zonotent?</a>
+    <a href="#background">Background</a>
     <a href="#video">Video</a>
     <a href="#minkowski">Minkowski sums</a>
     <a href="#reduction">Order reduction</a>
@@ -44,55 +44,17 @@
 
 <main>
 
-<section id="overview" style="border-top:0">
-  <div class="wrap prose">
-    <p class="tldr">
-      Reachability analysis typically propagates robust sets, which bound where a system can go but assign no
-      probability to the states it can reach. To bridge this gap, we propose <strong>zonotents</strong>, which treat
-      a zonotope, a common robust representation of reachable sets, as the support of a probability density. We
-      instantiate zonotents with Gaussian densities, which benefits both zonotopes and Gaussians. We can discard parts
-      of a zonotope's support that are unlikely to be reached, while still respecting the physical bounds of
-      reachability analysis that a Gaussian distribution inherently discards.
-    </p>
-    <p>
-      A zonotope is described by a center point and a list of vectors called <em>generators</em>, and it contains
-      every point reached by adding to the center each generator scaled by a number between &minus;1 and 1.
-      Reachability analysis moves a zonotope forward in time by applying the system's linear dynamics, which
-      transforms the generators, and by adding the noise of each step, which appends the noise's generators to the
-      list. A <em>Gaussian zonotent</em> moves forward with the same two operations, so its zonotope is exactly the
-      reachable set, and its density follows approximately, by matching the mean and covariance.
-    </p>
-    <p>
-      Because every step appends generators, the zonotope's description grows over time, and so does the cost of
-      computing with it. The number of generators per dimension is called the zonotope's <em>order</em>, and
-      reachability analysis usually controls it by <em>order reduction</em>, which replaces the zonotope with a
-      larger one that has fewer generators. Each replacement adds states the system cannot reach, and the added
-      volume compounds over many steps. <strong>Probabilistic order reduction</strong> instead uses the density to
-      choose the smaller zonotope. Its outer form still contains every reachable state, and its inner and free forms
-      discard regions that hold at most a chosen share of the probability, such as 0.1%, with a bound on how much
-      this changes any probability computed afterward.
-    </p>
-    <p>
-      In experiments, Gaussian zonotents matched Monte Carlo estimates of the probabilities of collision and of
-      reaching unsafe states, which come from simulating many random trajectories, as closely as plain Gaussians did. For a robot passing between two
-      obstacles, probabilistic order reduction certified a gap 38&ndash;42% narrower than the full reachable set
-      allows, with a collision probability of at most 1.2%. For carrying an open cup of water whose fill depth is
-      unknown, a zonotent bounded the probability of spilling under a linear model of the sloshing water, and it
-      accepted motions where worst-case reachability accepted none.
-    </p>
-    <a class="scroll-cue" href="#zonotent">Scroll down!
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg></a>
-  </div>
-</section>
-
-<section id="zonotent">
+<section id="zonotent" style="border-top:0">
   <div class="wrap">
     <div class="prose">
       <h2>What is a zonotent?</h2>
       <p>
-        A zonotope <span class="m">Z = Z(c, G) = \{c + G\beta : \|\beta\|_\infty \le 1\}</span> is a robust set that
-        bounds every reachable state and stays closed under the affine maps and Minkowski sums of linear
-        reachability. A <strong>zonotent</strong> pairs <span class="m">Z</span> with a density
+        A zonotope is a convex, centrally symmetric polytope
+        <span class="nowrap"><span class="m">Z = Z(c, G) = \{c + G\beta : \|\beta\|_\infty \le 1\}</span>,</span> with center
+        <span class="m">c</span> and generators given by the columns of <span class="m">G</span>. Zonotopes are closed
+        under affine maps and Minkowski sums, the building blocks of reachability analysis for uncertain linear
+        systems, and both operations need only matrix arithmetic, so a zonotope can cheaply represent every state a
+        system can reach. A <strong>zonotent</strong> pairs <span class="m">Z</span> with a density
         <span class="m">f</span> that integrates to 1 over <span class="m">Z</span>. A <strong>Gaussian zonotent</strong>
         puts a scaled Gaussian on top of a uniform wall:
       </p>
@@ -135,6 +97,33 @@
     <p class="demo-foot">Every sample lies in <i>Z</i>, and most of the probability sits near the mode. Drag <i>&mu;</i> outside <i>Z</i>, and the density then peaks at the point of <i>Z</i> nearest <i>&mu;</i> in the Mahalanobis distance. The handle stops 5 standard deviations from <i>Z</i>, where the Gaussian's mass on <i>Z</i> is still large enough to compute with.</p>
   </div>
 </section>
+
+<section id="background">
+  <div class="wrap prose">
+    <h2>Background and motivation</h2>
+    <p>
+      Reachability analysis typically propagates robust sets such as zonotopes, which bound where a system can go but
+      assign no probability to the states it can reach. Gaussians assign probability, but they also put some of it on
+      states the system can never reach. A Gaussian zonotent keeps the physical bounds of the zonotope while its
+      density shows which reachable states are likely.
+    </p>
+    <p>
+      Each step of reachability analysis appends the noise's generators to the zonotope, so the cost of computing
+      with it grows over time. Reachability analysis usually reduces the number of generators per dimension, called
+      the zonotope's <em>order</em>, by replacing the zonotope with a larger one that has fewer generators, which adds
+      unreachable states that compound over many steps. <strong>Probabilistic order reduction</strong> instead uses
+      the density to discard regions that hold at most a chosen share of the probability, with a bound on how much
+      this changes any probability computed afterward.
+    </p>
+    <p>
+      In experiments, Gaussian zonotents matched Monte Carlo estimates of collision probabilities as closely as plain
+      Gaussians. Probabilistic order reduction certified a robot's passage through a gap 38&ndash;42% narrower than
+      the full reachable set allows, and a zonotent bounded the probability of spilling a cup of water in a linear
+      slosh model while accepting motions that worst-case reachability rejected.
+    </p>
+  </div>
+</section>
+
 
 <section id="video">
   <div class="wrap">
