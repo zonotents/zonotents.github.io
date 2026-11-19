@@ -36,8 +36,8 @@
 <nav class="toc" aria-label="Sections">
   <div class="wrap">
     <a href="#overview">Overview</a>
-    <a href="#video">Video</a>
     <a href="#zonotent">What is a zonotent?</a>
+    <a href="#video">Video</a>
     <a href="#minkowski">Minkowski sums</a>
     <a href="#reduction">Order reduction</a>
     <a href="#collision">Collision</a>
@@ -71,44 +71,6 @@
       set allows; and in carrying an open cup of water with an unknown fill depth, a relaxed Gaussian zonotent bounded
       the probability of spilling in a linear slosh model and accepted motions where worst-case reachability accepted none.
     </p>
-  </div>
-</section>
-
-<section id="video">
-  <div class="wrap">
-    <div class="prose">
-      <p class="eyebrow">Video · 66 s</p>
-      <h2>Will the water spill?</h2>
-      <p>
-        A cup of water slides 40&nbsp;cm across a table along a minimum-jerk path that takes &tau; seconds. The fill
-        depth is unknown (7.5 to 8.5&nbsp;cm). The slosh model's state is the water height at the wall and its rate. A
-        zonotope alone contains every state the model can reach, so it flags a spill even for safe motions; the
-        zonotent's density shows that those states are unlikely. The fluid is simulated in 3D with Basilisk. The video
-        plays at quarter speed.
-      </p>
-    </div>
-    <figure>
-      <div class="video-frame">
-        <video controls preload="metadata" playsinline poster="media/slosh_poster.jpg">
-          <source src="media/slosh_video.mp4" type="video/mp4">
-        </video>
-      </div>
-    </figure>
-    <div class="prose">
-      <div class="table-scroll">
-        <table>
-          <thead><tr><th class="num">&tau; (s)</th><th>Case shown in the video</th><th class="num">Zonotent bound on P(spill)</th></tr></thead>
-          <tbody>
-            <tr><td class="num">0.75</td><td>Too fast: the model and the fluid both spill</td><td class="num">&le; 1 (no guarantee)</td></tr>
-            <tr><td class="num">0.83</td><td>Fastest move that keeps the noise-free model below the rim</td><td class="num">&le; 1 (no guarantee)</td></tr>
-            <tr><td class="num">1.01</td><td>Zonotent plan for a spill probability of at most 5%</td><td class="num">&le; 0.039</td></tr>
-            <tr class="hl"><td class="num">1.05</td><td>Zonotent plan for a spill probability of at most 1%</td><td class="num">&le; 0.009</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="note">Bounds hold for the whole carry at any fill depth in [7.5, 8.5]&nbsp;cm, in the linear slosh model.
-        The 0.83&nbsp;s move spills with probability 0.9999 at 8.5&nbsp;cm. Details in <a href="#e3">E3</a>.</p>
-    </div>
   </div>
 </section>
 
@@ -161,6 +123,45 @@
       </div>
     </div>
     <p class="demo-foot">A density on a robust set: every sample lies in <i>Z</i>, but most of the probability sits near the mode. Drag <i>&mu;</i> outside <i>Z</i>: the density then peaks at the point of <i>Z</i> nearest <i>&mu;</i> in the Mahalanobis distance.</p>
+  </div>
+</section>
+
+<section id="video">
+  <div class="wrap">
+    <div class="prose">
+      <p class="eyebrow">Video · 66 s</p>
+      <h2>Zonotents can tell if the water will spill</h2>
+      <p>
+        A cup of water slides 40&nbsp;cm across a table along a minimum-jerk path that takes &tau; seconds, and the
+        fill depth is unknown (7.5 to 8.5&nbsp;cm). A zonotent bounds the probability that the water spills during the
+        whole carry, so a planner can pick the fastest move that meets a risk budget, such as at most a 1% chance of
+        spilling. A zonotope alone contains every state the slosh model can reach, so it flags a spill even for moves
+        that almost never spill. The zonotent's density shows that those states are unlikely. The fluid is simulated
+        in 3D with Basilisk, and the simulation plays at quarter speed.
+      </p>
+    </div>
+    <figure>
+      <div class="video-frame">
+        <video controls preload="metadata" playsinline poster="media/slosh_poster.jpg">
+          <source src="media/slosh_video.mp4" type="video/mp4">
+        </video>
+      </div>
+    </figure>
+    <div class="prose">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th class="num">&tau; (s)</th><th>Case shown in the video</th><th class="num">Zonotent bound on P(spill)</th></tr></thead>
+          <tbody>
+            <tr><td class="num">0.75</td><td>Too fast: the model and the fluid both spill</td><td class="num">&le; 1 (no guarantee)</td></tr>
+            <tr><td class="num">0.83</td><td>Fastest move that keeps the noise-free model below the rim</td><td class="num">&le; 1 (no guarantee)</td></tr>
+            <tr><td class="num">1.01</td><td>Zonotent plan for a spill probability of at most 5%</td><td class="num">&le; 0.039</td></tr>
+            <tr class="hl"><td class="num">1.05</td><td>Zonotent plan for a spill probability of at most 1%</td><td class="num">&le; 0.009</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Bounds hold for the whole carry at any fill depth in [7.5, 8.5]&nbsp;cm, in the linear slosh model.
+        The 0.83&nbsp;s move spills with probability 0.9999 at 8.5&nbsp;cm. Details in <a href="#e3">E3</a>.</p>
+    </div>
   </div>
 </section>
 
