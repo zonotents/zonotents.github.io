@@ -68,7 +68,8 @@
       </p>
     </div>
     <figure class="prose">
-      <div class="paper-fig" style="max-width:26rem;margin:0 auto"><img src="media/zonotent_overview.png" alt="A Gaussian zonotent drawn in 3D: a hexagonal zonotope Z with center c, a uniform wall of height w, and a Gaussian bump with mean mu and covariance Sigma on top." loading="lazy"></div>
+      <div class="paper-fig"><img src="media/zonotent_overview.png" alt="Three zonotents drawn in 3D over a hexagonal zonotope Z with center c: a uniform zonotent, a prism of height w; a Gaussian zonotent, a Gaussian bump with mean mu and covariance Sigma atop a wall of height w; and a Gaussian zonotent with w = 0, a Gaussian truncated to Z." loading="lazy"></div>
+      <figcaption>Left: a uniform zonotent, whose density is a constant wall of height <i>w</i>. Middle: a Gaussian zonotent, a scaled Gaussian atop the wall. Right: a Gaussian zonotent with no wall, a Gaussian truncated to <i>Z</i> and scaled to be a PDF.</figcaption>
     </figure>
 
     <div class="demo" id="demo-explore">
@@ -120,8 +121,8 @@
     </p>
     <p>
       In numerical experiments on uncertain linear systems, Gaussian zonotents matched Monte Carlo estimates of
-      collision probabilities as closely as untruncated Gaussians. Probabilistic order reduction certified the passage
-      of a robot through a gap 38&ndash;42% narrower than the exact reachable zonotope allows, and a zonotent bounded
+      collision probabilities as closely as untruncated Gaussians. Inner reductions of a Gaussian overbound certified,
+      for the true system, the passage of a robot through a gap 42% narrower than the exact reachable zonotope allows, and a zonotent bounded
       the probability of spilling a sliding cup of water with an unknown fill depth, in a linear slosh model, while
       accepting motions that worst-case reachability rejected.
     </p>
@@ -213,14 +214,14 @@
     <div class="prose">
       <h2>Probabilistic order reduction</h2>
       <p>
-        Every Minkowski sum adds generators, so the support of <span class="m">x_{t+1} = A x_t + w_t</span> after
+        Every Minkowski sum adds generators, so the support of <span class="m">x_{t+1} = A x_t + d_t</span> after
         <span class="m">t</span> steps has <span class="m">2 + 3t</span> generators in the system below. Classical order
         reduction encloses the zonotope in one of lower order, which can only grow the support. A density instead allows
         parts of the support that carry little probability to be discarded, up to a budget <span class="m">\zeta</span>, in three forms:
       </p>
       <ul>
         <li><strong>Outer</strong>: the reduced support <span class="m">Z'</span> contains <span class="m">Z</span>, so it keeps every reachable state and all of the probability, and conservatism enters only through the added volume. Here, we use the interval hull of <span class="m">Z</span> in the whitened frame of <span class="m">\Sigma</span>.</li>
-        <li><strong>Inner</strong>: the reduced support <span class="m">Z'</span> lies inside <span class="m">Z</span> and keeps <span class="m">\int_{Z'} f \ge 1-\zeta</span>. Every probability <span class="m">\int_U f</span> is then bounded as <span class="m">\int_{U\cap Z'} f \le \int_U f \le \int_{U\cap Z'} f + \zeta</span>. Here, a maximum-volume template is centered at the mode and shrunk to the budget. Note that this reduction misses its budget when the template holds less than <span class="m">1-\zeta</span> of the mass.</li>
+        <li><strong>Inner</strong>: the reduced support <span class="m">Z'</span> lies inside <span class="m">Z</span> and keeps <span class="m">\int_{Z'} f \ge 1-\zeta</span>. Every probability <span class="m">\int_U f</span> is then bounded as <span class="m">\int_{U\cap Z'} f \le \int_U f \le \int_{U\cap Z'} f + \zeta</span>. Here, a maximum-volume template is centered at the mode (or at <span class="m">c</span> when the mode is on the boundary of <span class="m">Z</span>) and shrunk to the budget. Note that this reduction misses its budget when the template holds less than <span class="m">1-\zeta</span> of the mass.</li>
         <li><strong>Free</strong>: the reduced support is the confidence parallelotope <span class="m">Z(\mu, r_\zeta L)</span> with <span class="m">\Sigma = LL^\top</span>, which is computed in closed form and need neither contain nor lie inside <span class="m">Z</span>. When <span class="m">Z</span> is symmetric about <span class="m">\mu</span>, the Gaussian correlation inequality certifies that it keeps <span class="m">1-\zeta</span> of the probability.</li>
       </ul>
     </div>
@@ -232,7 +233,7 @@
       <div class="stage"><canvas aria-label="Order reduction of a propagated zonotent"></canvas><div class="tip"></div></div>
       <div class="panel">
         <h4>Reduce a propagated zonotent</h4>
-        <p class="hint">The demo propagates the state of <i>x</i><sub><i>t</i>+1</sub> = 0.85&thinsp;R(20&deg;)&thinsp;<i>x</i><sub><i>t</i></sub> + <i>w</i><sub><i>t</i></sub> by moment-matched sums from a uniform initial state. This is the system of E2 without its drift.</p>
+        <p class="hint">The demo propagates the state of <i>x</i><sub><i>t</i>+1</sub> = 0.85&thinsp;R(20&deg;)&thinsp;<i>x</i><sub><i>t</i></sub> + <i>d</i><sub><i>t</i></sub> by moment-matched sums from a uniform initial state. This is the system of E2 without its drift.</p>
         <div class="ctrl"><label>View</label>
           <div class="seg" data-seg="proj"><button data-v="flat" aria-pressed="true">Top</button><button data-v="oblique">Oblique</button></div>
         </div>
@@ -262,7 +263,7 @@
         The probability that the state lies in an obstacle <span class="m">O</span> is the mass of the zonotent on
         <span class="m">Z_t \cap O</span>, which is computed exactly for the propagated zonotent. Note that this is an
         estimate, not a bound, because the moment-matched sum only approximates the convolution. The demo reproduces the collision part of E2, with the system
-        <span class="m">x_{t+1} = 0.85\,R(20^\circ)\,x_t + (0.6, 0.3) + w_t</span>, a uniform initial state, and the
+        <span class="m">x_{t+1} = 0.85\,R(20^\circ)\,x_t + (0.6, 0.3) + d_t</span>, a uniform initial state, and the
         obstacle of E2, which can be dragged.
       </p>
     </div>
@@ -326,7 +327,7 @@
       <div>
         <p class="eyebrow">E2</p>
         <h3>Collision probability and a narrow gap</h3>
-        <p class="q">Does a Gaussian zonotent keep the probabilities of collision of a Gaussian on a smaller support, and do inner reductions certify passage through a gap that the reachable zonotope blocks?</p>
+        <p class="q">Along an affine dynamical system, do the reduced supports of a Gaussian zonotent certify passage through a gap that the exact reachable zonotope blocks?</p>
         <p><strong>Collision.</strong> The largest errors of the moment-matched zonotent over <i>t</i> = 0&hellip;5 were 0.004 with uniform noise and 0.007 with truncated Gaussian noise, the same as those of the untruncated Gaussian. At <i>t</i> = 5 the support reduced after every step had area 0.52 with truncated Gaussian noise, against 2.56 for the exact reachable zonotope and 4.61 for its outer reduction.</p>
         <p><strong>Narrow gap.</strong> A 0.5&nbsp;m &times; 0.4&nbsp;m robot passes between two obstacles. A relaxed Gaussian overbound was propagated with a first-exit bound, which holds for the true system. Every reduction met its budget of &zeta; = 10<sup>&minus;3</sup> at every step up to <i>t</i> = 12, so each guaranteed bound on collision was 0.012.</p>
         <div class="kpis">
@@ -349,23 +350,22 @@
         <p class="q">When the noise is bounded, how do zonotents compare with probabilistic zonotopes in their probabilities of unsafe sets?</p>
         <p>We use the system of Althoff et al. (2009), discretized over 250 steps, with the initial state and noise either truncated Gaussians (&plusmn;3&sigma;) or uniform. The unsafe events are <i>x</i><sub>2</sub> &le; &minus;1.5 and the tail <i>x</i><sub>2</sub> &le; &minus;2.5.</p>
         <ul>
-          <li>With truncated noise, the zonotent was inside the Monte Carlo intervals at all but one of the 502 pairs (largest errors 0.0010 and 0.0002), as was the untruncated Gaussian.</li>
-          <li>With truncated noise, the probabilistic-zonotope upper bound exceeded the estimate by at most 0.017 and 0.0010.</li>
-          <li>With uniform noise, the zonotent fell outside the intervals at 80 and 69 of 251 steps (largest errors 0.0071 and 0.0016).</li>
-          <li>With uniform noise, the probabilistic zonotope's box hull with the noise also treated as a set gave a bound above one from step 21 on.</li>
+          <li>With truncated noise, the zonotent was inside the 99% Monte Carlo intervals at all but one of the 502 pairs of a step and an event, and the untruncated Gaussian agreed with it to within 10<sup>&minus;12</sup>.</li>
+          <li>With uniform noise, the zonotent fell outside the intervals at 80 and 69 of the 251 steps.</li>
+          <li>With uniform noise and the initial box as a set, the probabilistic-zonotope bound exceeded one at 39 steps, and with the box hull of Althoff et al. it was at most 0.89.</li>
         </ul>
       </div>
       <div>
         <div class="table-scroll" style="margin-top:2rem">
           <table>
-            <thead><tr><th>Noise</th><th class="num">Zonotent outside the 99% interval</th><th class="num">Largest error, <i>x</i><sub>2</sub> &le; &minus;1.5 / tail</th></tr></thead>
+            <thead><tr><th>Noise</th><th class="num">Zonotent outside the 99% interval</th><th class="num">Probabilistic-zonotope bound</th></tr></thead>
             <tbody>
-              <tr class="hl"><td>Truncated Gaussian</td><td class="num">1 of 502 pairs</td><td class="num">0.0010 / 0.0002</td></tr>
-              <tr><td>Uniform</td><td class="num">80 and 69 of 251 steps</td><td class="num">0.0071 / 0.0016</td></tr>
+              <tr class="hl"><td>Truncated Gaussian</td><td class="num">1 of 502 pairs</td><td class="num">&mdash;</td></tr>
+              <tr><td>Uniform</td><td class="num">80 and 69 of 251 steps</td><td class="num">&gt; 1 at 39 steps (box as set), &le; 0.89 (box hull)</td></tr>
             </tbody>
           </table>
         </div>
-        <p class="note">With bounded noise, the zonotent was as accurate as an untruncated Gaussian, and the guaranteed probabilistic-zonotope bound exceeded one. Neither the zonotent nor the untruncated Gaussian carries a guarantee here.</p>
+        <p class="note">With bounded noise, the zonotent was as accurate as an untruncated Gaussian. The hull of a probabilistic zonotope puts the peak density of its Gaussian part at every point of its zonotope, so its bound exceeds one, and enclosing the box removes this at the price of a loose bound. Neither the zonotent nor the untruncated Gaussian carries a guarantee here.</p>
       </div>
     </article>
 
@@ -373,12 +373,12 @@
       <div>
         <p class="eyebrow">E4</p>
         <h3>Slosh-aware transport of a cup of water</h3>
-        <p class="q">Does a relaxed Gaussian zonotent bound the probability of spilling an open cup of water while accepting faster moves than worst-case reachability and a Gaussian tail bound, and does its slosh model predict spills in a fluid simulation?</p>
+        <p class="q">Does a relaxed Gaussian zonotent bound the probability of spilling an open cup of water while accepting faster moves than worst-case reachability?</p>
         <p>The slosh model is a linear pendulum (cup radius 3.5&nbsp;cm, rim 10&nbsp;cm, fill depth 7.5&ndash;8.5&nbsp;cm unknown) with noisy initial slosh and acceleration error. Each method picks the shortest 40&nbsp;cm move whose spill probability is at most <i>p</i><sub>max</sub>.</p>
         <ul>
           <li>The zonotent bound was at least the Monte Carlo estimate for all 282 plans, by a factor of 1.6 to 2.5 where the estimate lay between 10<sup>&minus;3</sup> and 0.1.</li>
           <li><strong>Worst-case reachability accepted no plan</strong>, since its support reached at least 3.0 times the threshold.</li>
-          <li>In 3D Basilisk fluid simulations, the model agreed on whether the water spilled in all 33 runs on 2.5&nbsp;mm cells and in 27 of 30 on 1.25&nbsp;mm cells.</li>
+          <li>In 3D Basilisk fluid simulations, the model agreed on whether the water spilled in 27 of 30 runs on 1.25&nbsp;mm cells, missing only moves whose modeled peak lay within 2.4&nbsp;mm of the rim, and in all 33 runs on 2.5&nbsp;mm cells.</li>
         </ul>
         <div class="table-scroll">
           <table>
