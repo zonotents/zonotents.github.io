@@ -146,6 +146,7 @@ function demoExplore() {
     if (k === "proj") view.setMode(U.get.proj());
     draw("input");
   });
+  view.setMode(U.get.proj());  // start in the view pressed in the page (oblique, as in Fig. 1 of the paper)
 
   const compute = () => {
     const S = covFrom(U.get.s1(), U.get.s2(), U.get.th()), z = Z.zonotope(st.c, st.G);

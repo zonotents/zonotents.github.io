@@ -78,12 +78,12 @@
         <h4>Explore a Gaussian zonotent</h4>
         <p class="hint">Drag the black handles to move the center and generators of <i>Z</i>, and the blue one to move the mean <i>&mu;</i>. Hover to read the density.</p>
         <div class="ctrl"><label>View</label>
-          <div class="seg" data-seg="proj"><button data-v="flat" aria-pressed="true">Top</button><button data-v="oblique">Oblique</button></div>
+          <div class="seg" data-seg="proj"><button data-v="flat">Top</button><button data-v="oblique" aria-pressed="true">Oblique</button></div>
         </div>
         <div class="ctrl"><label><span>Std. dev. along axis 1</span> <output data-out="s1"></output></label><input type="range" data-in="s1" min="0.1" max="2" step="0.01" value="0.7"></div>
         <div class="ctrl"><label><span>Std. dev. along axis 2</span> <output data-out="s2"></output></label><input type="range" data-in="s2" min="0.1" max="2" step="0.01" value="0.35"></div>
         <div class="ctrl"><label><span>Rotation</span> <output data-out="th"></output></label><input type="range" data-in="th" min="0" max="180" step="1" value="30"></div>
-        <div class="ctrl"><label><span>Wall share &eta;</span> <output data-out="eta"></output></label><input type="range" data-in="eta" min="0" max="1" step="0.01" value="0.1"></div>
+        <div class="ctrl"><label><span>Wall share &eta;</span> <output data-out="eta"></output></label><input type="range" data-in="eta" min="0" max="1" step="0.01" value="0.75"></div>
         <div class="checks">
           <label><input type="checkbox" data-in="samples" checked> Samples</label>
           <label><input type="checkbox" data-in="ellipse"> Gaussian's 2&sigma; ellipse</label>
@@ -96,7 +96,7 @@
         <div class="legend"><span><i class="sw" style="background:var(--blue)"></i>density</span><span><i class="ln"></i>support <i>Z</i></span><span><i class="ln dash"></i>2&sigma; of own moments</span></div>
       </div>
     </div>
-    <p class="demo-foot">Every random sample lies in <i>Z</i>, and most of the probability sits near the mode. Drag <i>&mu;</i> outside <i>Z</i>, and the density then peaks at the point of <i>Z</i> nearest <i>&mu;</i> in the Mahalanobis distance. The handle stops 5 standard deviations from <i>Z</i>, where the Gaussian's mass on <i>Z</i> is still large enough to compute with.</p>
+    <p class="demo-foot">Every random sample lies in <i>Z</i>, and the Gaussian's share of the probability sits near the mode, so lowering the wall share moves more of it there. Drag <i>&mu;</i> outside <i>Z</i>, and the density then peaks at the point of <i>Z</i> nearest <i>&mu;</i> in the Mahalanobis distance. The handle stops 5 standard deviations from <i>Z</i>, where the Gaussian's mass on <i>Z</i> is still large enough to compute with.</p>
   </div>
 </section>
 
