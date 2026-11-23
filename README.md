@@ -14,7 +14,7 @@ python3 -m http.server 8000
 
 ## Layout
 
-- `index.html`: the page. The text and numbers follow the paper's Overleaf source of 2026-11-21.
+- `index.html`: the page. The text and numbers follow the paper's Overleaf source of 2026-11-23 (E2 approximate probabilities, E3 guaranteed bounds through first exit).
 - `css/style.css`: the styles, with color tokens for light and dark mode. The plot colors are the paper's: blue
   `#3b95c4` for the system, red `#f81b02` for the obstacle, and purple `#b469c0` for their overlap.
 - `js/zono.js`: a JavaScript port of the 2D cases of the zonotents Python package. It covers zonotopes, Gaussian

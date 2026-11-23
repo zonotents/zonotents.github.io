@@ -69,7 +69,7 @@
     </div>
     <figure class="prose">
       <div class="paper-fig"><img src="media/zonotent_overview.png" alt="Three zonotents drawn in 3D over a hexagonal zonotope Z with center c: a uniform zonotent, a prism of height w; a Gaussian zonotent, a Gaussian bump with mean mu and covariance Sigma atop a wall of height w; and a Gaussian zonotent with w = 0, a Gaussian truncated to Z." loading="lazy"></div>
-      <figcaption>Left: a uniform zonotent, whose density is a constant wall of height <i>w</i>. Middle: a Gaussian zonotent, a scaled Gaussian atop the wall. Right: a Gaussian zonotent with no wall, a Gaussian truncated to <i>Z</i> and scaled to be a PDF.</figcaption>
+      <figcaption>(a) A uniform zonotent, whose density is a constant wall of height <i>w</i>. (b) A Gaussian zonotent, a scaled Gaussian atop the wall. (c) A Gaussian zonotent with no wall, a Gaussian truncated to <i>Z</i> and scaled to be a PDF.</figcaption>
     </figure>
 
     <div class="demo" id="demo-explore">
@@ -121,10 +121,13 @@
     </p>
     <p>
       In numerical experiments on uncertain linear systems, Gaussian zonotents matched Monte Carlo estimates of
-      collision probabilities as closely as untruncated Gaussians. Inner reductions of a Gaussian overbound certified,
-      for the true system, the passage of a robot through a gap 42% narrower than the exact reachable zonotope allows, and a zonotent bounded
-      the probability of spilling a sliding cup of water with an unknown fill depth, in a linear slosh model, while
-      accepting motions that worst-case reachability rejected.
+      collision probabilities as closely as untruncated Gaussians. These probabilities are approximate, so for
+      guarantees we propagate a <strong>Gaussian overbound</strong>, a Gaussian zonotent whose density lies above that
+      of the true state, and bound the probability that the true state ever leaves a sequence of sets, such as reduced
+      supports or the states in which the system is safe. This <strong>first-exit bound</strong> certified, for the
+      true system, the passage of a robot through a gap 42% narrower than the exact reachable zonotope allows, and it
+      bounded the probability of spilling a sliding cup of water with an unknown fill depth, in a linear slosh model,
+      while accepting motions that worst-case reachability rejected.
     </p>
   </div>
 </section>
@@ -139,8 +142,8 @@
         A cup of water slides 40&nbsp;cm across a table along a minimum-jerk path that takes &tau; seconds, and its
         fill depth is unknown (7.5 to 8.5&nbsp;cm). A zonotope alone contains every state the slosh model can reach,
         so it flags a spill even for moves that almost never spill. The density of a zonotent shows that those states
-        are unlikely, and the zonotent bounds the probability that the water spills at any time during the move, which
-        lets a planner pick the fastest move that meets a risk budget (e.g., at most a 1% chance of spilling). The
+        are unlikely, and a first-exit bound on a Gaussian overbound bounds the probability that the water spills at
+        any time during the move, which lets a planner pick the fastest move that meets a risk budget (e.g., at most a 1% chance of spilling). The
         fluid is simulated in 3D with Basilisk, and the simulation plays at quarter speed.
       </p>
     </div>
@@ -165,7 +168,7 @@
       </div>
       <p class="note">The bounds hold over the whole move for every fill depth in [7.5, 8.5]&nbsp;cm, and they are guaranteed only in the linear slosh model.
         The 0.83&nbsp;s move spills with probability 0.9999 at 8.5&nbsp;cm. The cup in
-        the video is filled to 8&nbsp;cm. See <a href="#e4">E4</a> for details.</p>
+        the video is filled to 8&nbsp;cm. See <a href="#e3">E3</a> for details.</p>
     </div>
   </div>
 </section>
@@ -225,8 +228,8 @@
         <li><strong>Free</strong>: the reduced support is the confidence parallelotope <span class="m">Z(\mu, r_\zeta L)</span> with <span class="m">\Sigma = LL^\top</span>, which is computed in closed form and need neither contain nor lie inside <span class="m">Z</span>. When <span class="m">Z</span> is symmetric about <span class="m">\mu</span>, the Gaussian correlation inequality certifies that it keeps <span class="m">1-\zeta</span> of the probability.</li>
       </ul>
     </div>
-    <figure>
-      <div class="paper-fig"><img src="media/reduction_overview_1x4.png" alt="Four panels: (a) a zonotent with six generators; (b) outer reduction to a parallelotope that encloses it; (c) inner reduction to a smaller zonotope inside it; (d) free reduction to a parallelotope that neither contains nor is contained in it." loading="lazy"></div>
+    <figure style="max-width:46rem;margin-inline:auto">
+      <div class="paper-fig"><img src="media/reduction_overview_2x2.png" alt="Four panels in a 2 by 2 grid: (a) a zonotent with six generators; (b) outer reduction to a parallelotope that encloses it; (c) inner reduction to a smaller zonotope inside it; (d) free reduction to a parallelotope that neither contains nor is contained in it." loading="lazy"></div>
       <figcaption>(a) A zonotent with 6 generators and its (b) outer, (c) inner, and (d) free reductions, with &zeta; = 0.05 so the discarded parts are visible.</figcaption>
     </figure>
     <div class="demo" id="demo-reduction">
@@ -326,29 +329,10 @@
     <article class="exp" id="e2">
       <div>
         <p class="eyebrow">E2</p>
-        <h3>Collision probability and a narrow gap</h3>
-        <p class="q">Along an affine dynamical system, do the reduced supports of a Gaussian zonotent certify passage through a gap that the exact reachable zonotope blocks?</p>
-        <p><strong>Collision.</strong> The largest errors of the moment-matched zonotent over <i>t</i> = 0&hellip;5 were 0.004 with uniform noise and 0.007 with truncated Gaussian noise, the same as those of the untruncated Gaussian. At <i>t</i> = 5 the support reduced after every step had area 0.52 with truncated Gaussian noise, against 2.56 for the exact reachable zonotope and 4.61 for its outer reduction.</p>
-        <p><strong>Narrow gap.</strong> A 0.5&nbsp;m &times; 0.4&nbsp;m robot passes between two obstacles. A relaxed Gaussian overbound was propagated with a first-exit bound, which holds for the true system. Every reduction met its budget of &zeta; = 10<sup>&minus;3</sup> at every step up to <i>t</i> = 12, so each guaranteed bound on collision was 0.012.</p>
-        <div class="kpis">
-          <div class="kpi"><b>0.56&ndash;0.60&nbsp;m</b><span>gap certified by the reductions</span></div>
-          <div class="kpi"><b>0.97&nbsp;m</b><span>exact reachable zonotope</span></div>
-          <div class="kpi"><b>1.49&nbsp;m</b><span>its outer reduction</span></div>
-        </div>
-        <p class="note">The guaranteed confidence ellipses certified about the same gap (0.55&nbsp;m); the narrowest gap with no simulated collision in 10<sup>6</sup> trajectories was 0.61&nbsp;m. Between 0.76% and 0.79% of trajectories left the reduced supports by <i>t</i> = 12, against the bound of 1.2%.</p>
-      </div>
-      <figure style="margin:0">
-        <div class="paper-fig"><img src="media/narrow_gap_certified.png" alt="Narrow gap experiment: (a) the robot's reduced supports and samples passing between two obstacles; (b) probability of collision against gap width for simulation, an untruncated Gaussian, and the guaranteed bound for two budgets." loading="lazy"></div>
-        <figcaption><b>Narrow gap.</b> (a) The obstacles at a 0.60&nbsp;m gap, the obstacles enlarged by the robot's body, the exact reachable zonotope every other step, and the reduced supports with samples. (b) Probability of collision against gap width.</figcaption>
-      </figure>
-    </article>
-
-    <article class="exp" id="e3">
-      <div>
-        <p class="eyebrow">E3</p>
-        <h3>Probabilistic zonotopes with bounded noise</h3>
-        <p class="q">When the noise is bounded, how do zonotents compare with probabilistic zonotopes in their probabilities of unsafe sets?</p>
-        <p>We use the system of Althoff et al. (2009), discretized over 250 steps, with the initial state and noise either truncated Gaussians (&plusmn;3&sigma;) or uniform. The unsafe events are <i>x</i><sub>2</sub> &le; &minus;1.5 and the tail <i>x</i><sub>2</sub> &le; &minus;2.5.</p>
+        <h3>Approximate probabilities</h3>
+        <p class="q">Along an affine dynamical system and with bounded noise, how close to the truth are the probabilities of a Gaussian zonotent, and how do they compare with those of probabilistic zonotopes?</p>
+        <p><strong>Collision.</strong> The largest errors of the moment-matched zonotent over <i>t</i> = 0&hellip;5 were 0.004 with uniform noise and 0.007 with truncated Gaussian noise, the same as those of the untruncated Gaussian, and reducing the support after every step raised them by up to 0.002. At <i>t</i> = 5 the reduced support had area 0.52 with truncated Gaussian noise, against 2.56 for the exact reachable zonotope and 4.61 for its outer reduction.</p>
+        <p><strong>Probabilistic zonotopes.</strong> We use the system of Althoff et al. (2009), discretized over 250 steps, with the initial state and noise either truncated Gaussians (&plusmn;3&sigma;) or uniform. The unsafe events are <i>x</i><sub>2</sub> &le; &minus;1.5 and the tail <i>x</i><sub>2</sub> &le; &minus;2.5.</p>
         <ul>
           <li>With truncated noise, the zonotent was inside the 99% Monte Carlo intervals at all but one of the 502 pairs of a step and an event, and the untruncated Gaussian agreed with it to within 10<sup>&minus;12</sup>.</li>
           <li>With uniform noise, the zonotent fell outside the intervals at 80 and 69 of the 251 steps.</li>
@@ -365,16 +349,31 @@
             </tbody>
           </table>
         </div>
-        <p class="note">With bounded noise, the zonotent was as accurate as an untruncated Gaussian. The hull of a probabilistic zonotope puts the peak density of its Gaussian part at every point of its zonotope, so its bound exceeds one, and enclosing the box removes this at the price of a loose bound. Neither the zonotent nor the untruncated Gaussian carries a guarantee here.</p>
+        <p class="note">The zonotent takes its accuracy from the exact mean and covariance, as the untruncated Gaussian does, and like the Gaussian it carries no guarantee, so its density serves the reduction, which needs it to choose the part of the support to discard. The hull of a probabilistic zonotope puts the peak density of its Gaussian part at every point of its zonotope, so its bound exceeds one, and enclosing the box removes this at the price of a loose bound. E3 adds guarantees.</p>
       </div>
     </article>
 
-    <article class="exp" id="e4">
+    <article class="exp" id="e3">
       <div>
-        <p class="eyebrow">E4</p>
-        <h3>Slosh-aware transport of a cup of water</h3>
-        <p class="q">Does a relaxed Gaussian zonotent bound the probability of spilling an open cup of water while accepting faster moves than worst-case reachability?</p>
-        <p>The slosh model is a linear pendulum (cup radius 3.5&nbsp;cm, rim 10&nbsp;cm, fill depth 7.5&ndash;8.5&nbsp;cm unknown) with noisy initial slosh and acceleration error. Each method picks the shortest 40&nbsp;cm move whose spill probability is at most <i>p</i><sub>max</sub>.</p>
+        <p class="eyebrow">E3</p>
+        <h3>Guaranteed bounds through first exit</h3>
+        <p class="q">Does the first-exit bound hold for the true system while certifying a narrower gap and accepting faster moves of an open cup of water than worst-case reachability?</p>
+        <p>Both parts propagate a Gaussian overbound and bound the probability that the true state ever leaves a sequence of sets, which are the reduced supports for the narrow gap and the states that do not spill for the cup.</p>
+        <p><strong>Narrow gap.</strong> A 0.5&nbsp;m &times; 0.4&nbsp;m robot passes between two obstacles. With the reduced supports as the sets, the bound is the sum of the masses discarded by the reductions. Every reduction met its budget of &zeta; = 10<sup>&minus;3</sup> at every step up to <i>t</i> = 12, so each guaranteed bound on collision was 0.012.</p>
+        <div class="kpis">
+          <div class="kpi"><b>0.56&ndash;0.60&nbsp;m</b><span>gap certified by the reductions</span></div>
+          <div class="kpi"><b>0.97&nbsp;m</b><span>exact reachable zonotope</span></div>
+          <div class="kpi"><b>1.49&nbsp;m</b><span>its outer reduction</span></div>
+        </div>
+        <p class="note">The guaranteed confidence ellipses certified about the same gap (0.55&nbsp;m); the narrowest gap with no simulated collision in 10<sup>6</sup> trajectories was 0.61&nbsp;m. Between 0.76% and 0.79% of trajectories left the reduced supports by <i>t</i> = 12, against the bound of 1.2%.</p>
+      </div>
+      <figure style="margin:0">
+        <div class="paper-fig"><img src="media/narrow_gap_certified.png" alt="Narrow gap experiment: (a) the robot's reduced supports and samples passing between two obstacles; (b) probability of collision against gap width for simulation, an untruncated Gaussian, and the guaranteed bound for two budgets." loading="lazy"></div>
+        <figcaption><b>Narrow gap.</b> (a) At a 0.60&nbsp;m gap, the obstacles (red) and their enlargement by the robot's body (dashed), the exact reachable zonotope every other step (gray) and its overlap with the enlarged obstacles (purple), the supports reduced by the mass template (blue), and simulated positions. (b) Probability of collision against gap width, simulated and under the untruncated Gaussian, with the guaranteed bound for two budgets and the gap that each reduction certifies.</figcaption>
+      </figure>
+
+      <div>
+        <p><strong>Cup of water.</strong> The slosh model is a linear pendulum (cup radius 3.5&nbsp;cm, rim 10&nbsp;cm, fill depth 7.5&ndash;8.5&nbsp;cm unknown) with noisy initial slosh and acceleration error. Each method picks the shortest 40&nbsp;cm move whose spill probability is at most <i>p</i><sub>max</sub>. Here the sets are the states that do not spill, so the bound counts each trajectory only at the step where it first crosses the threshold.</p>
         <ul>
           <li>The zonotent bound was at least the Monte Carlo estimate for all 282 plans, by a factor of 1.6 to 2.5 where the estimate lay between 10<sup>&minus;3</sup> and 0.1.</li>
           <li><strong>Worst-case reachability accepted no plan</strong>, since its support reached at least 3.0 times the threshold.</li>
@@ -392,7 +391,7 @@
             </tbody>
           </table>
         </div>
-        <p class="note">The table gives move durations for minimum-jerk (MJ) plans. The bound is guaranteed only in the linear model, and the gain over the Gaussian tail bound comes from the first-passage bound.</p>
+        <p class="note">The table gives move durations for minimum-jerk (MJ) plans. The bound is guaranteed only in the linear model, and the gain over the Gaussian tail bound comes from counting only the first crossing.</p>
       </div>
       <div>
         <figure style="margin-top:0">
@@ -400,8 +399,8 @@
           <figcaption><b>Slosh model.</b> (a) Spill probability of MJ moves against move duration. (b) Wall height for the zonotent plan at <i>p</i><sub>max</sub> = 0.01, with the support, the central 99.8% of simulated trajectories, and the rim.</figcaption>
         </figure>
         <figure>
-          <div class="paper-fig"><img src="media/slosh_basilisk.png" alt="Basilisk fluid simulation: the free surface in the cup, wall height over time for two move durations compared with the model, and peak height against move duration." loading="lazy"></div>
-          <figcaption><b>Fluid simulation.</b> Top: the free surface at 8.5&nbsp;cm depth for &tau; = 1.05&nbsp;s. Bottom: wall height for &tau; = 0.83 and 1.05&nbsp;s, simulated and modeled, and peak height against &tau;.</figcaption>
+          <div class="paper-fig"><img src="media/slosh_basilisk.png" alt="Basilisk fluid simulation: (a) the free surface in the cup; (b) wall height over time for two move durations compared with the model; (c) peak height against move duration at three fill depths." loading="lazy"></div>
+          <figcaption><b>Fluid simulation.</b> (a) The free surface at 8.5&nbsp;cm depth for &tau; = 1.05&nbsp;s. (b) Wall height for &tau; = 0.83 and 1.05&nbsp;s, simulated and modeled. (c) Peak height against &tau;, modeled and simulated at fill depths of 7.5, 8, and 8.5&nbsp;cm.</figcaption>
         </figure>
       </div>
     </article>

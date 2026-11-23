@@ -342,7 +342,7 @@ function demoMinkowski() {
 }
 
 // =====================================================================================================
-// Shared: the E1 system, propagated by moment-matched sums
+// Shared: the E2 system, propagated by moment-matched sums
 // =====================================================================================================
 const A_E1 = M.scale(M.rot(20 * DEG), 0.85);
 const G0 = [[0.3, 0.0], [0.1, 0.2]];
@@ -434,7 +434,7 @@ function demoReduction() {
 }
 
 // =====================================================================================================
-// Demo 4: probability of collision (the collision part of E1)
+// Demo 4: probability of collision (the collision part of E2)
 // =====================================================================================================
 function demoCollision() {
   const root = document.getElementById("demo-collision");
