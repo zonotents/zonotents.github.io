@@ -141,9 +141,9 @@
       <p>
         A cup of water slides 40&nbsp;cm across a table along a minimum-jerk path that takes &tau; seconds, and its
         fill depth is unknown (7.5 to 8.5&nbsp;cm). A zonotope alone contains every state the slosh model can reach,
-        so it flags a spill even for moves that almost never spill. The density of a zonotent shows that those states
+        so it flags a spill even for slides that almost never spill. The density of a zonotent shows that those states
         are unlikely, and a first-exit bound on a Gaussian overbound bounds the probability that the water spills at
-        any time during the move, which lets a planner pick the fastest move that meets a risk budget (e.g., at most a 1% chance of spilling). The
+        any time during the slide, which lets a planner pick the fastest slide that meets a risk budget (e.g., at most a 1% chance of spilling). The
         fluid is simulated in 3D with Basilisk, and the simulation plays at quarter speed.
       </p>
     </div>
@@ -160,14 +160,14 @@
           <thead><tr><th class="num">&tau; (s)</th><th>Case shown in the video</th><th class="num">Zonotent bound on P(spill)</th></tr></thead>
           <tbody>
             <tr><td class="num">0.75</td><td>Too fast, so the model and the fluid both spill</td><td class="num">&gt; 1 (vacuous)</td></tr>
-            <tr><td class="num">0.83</td><td>Fastest move that keeps the noise-free model below the rim at the nominal 8&nbsp;cm depth</td><td class="num">&gt; 1 (vacuous)</td></tr>
+            <tr><td class="num">0.83</td><td>Fastest slide that keeps the noise-free model below the rim at the nominal 8&nbsp;cm depth</td><td class="num">&gt; 1 (vacuous)</td></tr>
             <tr><td class="num">1.01</td><td>Zonotent plan for a spill probability of at most 5%</td><td class="num">&le; 0.040</td></tr>
             <tr class="hl"><td class="num">1.05</td><td>Zonotent plan for a spill probability of at most 1%</td><td class="num">&le; 0.009</td></tr>
           </tbody>
         </table>
       </div>
-      <p class="note">The bounds hold over the whole move for every fill depth in [7.5, 8.5]&nbsp;cm, and they are guaranteed only in the linear slosh model.
-        The 0.83&nbsp;s move spills with probability 0.9999 at 8.5&nbsp;cm. The cup in
+      <p class="note">The bounds hold over the whole slide for every fill depth in [7.5, 8.5]&nbsp;cm, and they are guaranteed only in the linear slosh model.
+        The 0.83&nbsp;s slide spills with probability 0.9999 at 8.5&nbsp;cm. The cup in
         the video is filled to 8&nbsp;cm. See <a href="#e3">E3</a> for details.</p>
     </div>
   </div>
@@ -357,7 +357,7 @@
       <div>
         <p class="eyebrow">E3</p>
         <h3>Guaranteed bounds through first exit</h3>
-        <p class="q">Does the first-exit bound hold for the true system while certifying a narrower gap and accepting faster moves of an open cup of water than worst-case reachability?</p>
+        <p class="q">Does the first-exit bound hold for the true system while certifying a narrower gap and accepting faster slides of an open cup of water than worst-case reachability?</p>
         <p>Both parts propagate a Gaussian overbound and bound the probability that the true state ever leaves a sequence of sets, which are the reduced supports for the narrow gap and the states that do not spill for the cup.</p>
         <p><strong>Narrow gap.</strong> A 0.5&nbsp;m &times; 0.4&nbsp;m robot passes between two obstacles. With the reduced supports as the sets, the bound is the sum of the masses discarded by the reductions. Every reduction met its budget of &zeta; = 10<sup>&minus;3</sup> at every step up to <i>t</i> = 12, so each guaranteed bound on collision was 0.012.</p>
         <div class="kpis">
@@ -373,11 +373,11 @@
       </figure>
 
       <div>
-        <p><strong>Cup of water.</strong> The slosh model is a linear pendulum (cup radius 3.5&nbsp;cm, rim 10&nbsp;cm, fill depth 7.5&ndash;8.5&nbsp;cm unknown) with noisy initial slosh and acceleration error. Each method picks the shortest 40&nbsp;cm move whose spill probability is at most <i>p</i><sub>max</sub>. Here the sets are the states that do not spill, so the bound counts each trajectory only at the step where it first crosses the threshold.</p>
+        <p><strong>Cup of water.</strong> The slosh model is a linear pendulum (cup radius 3.5&nbsp;cm, rim 10&nbsp;cm, fill depth 7.5&ndash;8.5&nbsp;cm unknown) with noisy initial slosh and acceleration error. Each method picks the shortest 40&nbsp;cm slide whose spill probability is at most <i>p</i><sub>max</sub>. Here the sets are the states that do not spill, so the bound counts each trajectory only at the step where it first crosses the threshold.</p>
         <ul>
           <li>The zonotent bound was at least the Monte Carlo estimate for all 282 plans, by a factor of 1.6 to 2.5 where the estimate lay between 10<sup>&minus;3</sup> and 0.1.</li>
           <li><strong>Worst-case reachability accepted no plan</strong>, since its support reached at least 3.0 times the threshold.</li>
-          <li>In 3D Basilisk fluid simulations, the model agreed on whether the water spilled in 27 of 30 runs on 1.25&nbsp;mm cells, missing only moves whose modeled peak lay within 2.4&nbsp;mm of the rim, and in all 33 runs on 2.5&nbsp;mm cells.</li>
+          <li>In 3D Basilisk fluid simulations, the model agreed on whether the water spilled in 27 of 30 runs on 1.25&nbsp;mm cells, missing only slides whose modeled peak lay within 2.4&nbsp;mm of the rim, and in all 33 runs on 2.5&nbsp;mm cells.</li>
         </ul>
         <div class="table-scroll">
           <table>
@@ -391,15 +391,15 @@
             </tbody>
           </table>
         </div>
-        <p class="note">The table gives move durations for minimum-jerk (MJ) plans. The bound is guaranteed only in the linear model, and the gain over the Gaussian tail bound comes from counting only the first crossing.</p>
+        <p class="note">The table gives slide durations for minimum-jerk (MJ) plans. The bound is guaranteed only in the linear model, and the gain over the Gaussian tail bound comes from counting only the first crossing.</p>
       </div>
       <div>
         <figure style="margin-top:0">
-          <div class="paper-fig"><img src="media/slosh_results.png" alt="Slosh results: (a) spill probability of minimum-jerk moves against move duration for each method; (b) water height at the wall over time for the zonotent plan, with its support, simulated trajectories, and the rim." loading="lazy"></div>
-          <figcaption><b>Slosh model.</b> (a) Spill probability of MJ moves against move duration. (b) Wall height for the zonotent plan at <i>p</i><sub>max</sub> = 0.01, with the support, the central 99.8% of simulated trajectories, and the rim.</figcaption>
+          <div class="paper-fig"><img src="media/slosh_results.png" alt="Slosh results: (a) spill probability of minimum-jerk slides against slide duration for each method; (b) water height at the wall over time for the zonotent plan, with its support, simulated trajectories, and the rim." loading="lazy"></div>
+          <figcaption><b>Slosh model.</b> (a) Spill probability of MJ slides against slide duration. (b) Wall height for the zonotent plan at <i>p</i><sub>max</sub> = 0.01, with the support, the central 99.8% of simulated trajectories, and the rim.</figcaption>
         </figure>
         <figure>
-          <div class="paper-fig"><img src="media/slosh_basilisk.png" alt="Basilisk fluid simulation: (a) the free surface in the cup; (b) wall height over time for two move durations compared with the model; (c) peak height against move duration at three fill depths." loading="lazy"></div>
+          <div class="paper-fig"><img src="media/slosh_basilisk.png" alt="Basilisk fluid simulation: (a) the free surface in the cup; (b) wall height over time for two slide durations compared with the model; (c) peak height against slide duration at three fill depths." loading="lazy"></div>
           <figcaption><b>Fluid simulation.</b> (a) The free surface at 8.5&nbsp;cm depth for &tau; = 1.05&nbsp;s. (b) Wall height for &tau; = 0.83 and 1.05&nbsp;s, simulated and modeled. (c) Peak height against &tau;, modeled and simulated at fill depths of 7.5, 8, and 8.5&nbsp;cm.</figcaption>
         </figure>
       </div>
