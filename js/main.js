@@ -196,10 +196,16 @@ function demoExplore() {
 // =====================================================================================================
 function demoMinkowski() {
   const root = document.getElementById("demo-minkowski");
-  const view = new View(root.querySelector("canvas"), { x0: -5.4, x1: 4.2, y0: -3.0, y1: 3.0 });
+  const view = new View(root.querySelector("canvas"), { x0: -5.4, x1: 4.2, y0: -3.3, y1: 3.3 });
   const tip = tooltip(root);
   // Real coordinates: both inputs and the sum are centered near 0; the drawing offsets them.
-  const OFF_X = [-3.6, 1.15], OFF_Y = [-3.6, -1.6], OFF_S = [1.5, 0];
+  // The oblique view foreshortens depth, so it spreads X and Y farther apart to keep their peaks and the ⊕ clear.
+  const LAYOUT = {
+    flat: { x: [-3.6, 1.45], y: [-3.6, -1.9], plus: [-3.6, -0.3] },
+    oblique: { x: [-3.6, 2.2], y: [-3.6, -2.4], plus: [-3.6, 0.6] },
+  };
+  let OFF_X = LAYOUT.flat.x, OFF_Y = LAYOUT.flat.y, OFF_PLUS = LAYOUT.flat.plus;
+  const OFF_S = [1.5, 0];
   const GY = [[0.5, 0.0], [0.0, 0.5], [0.3, -0.3]];
   const gram = (G) => G.reduce((S, g) => M.add(S, M.outer(g, g)), [[0, 0], [0, 0]]);
   const PRE = {
@@ -295,6 +301,7 @@ function demoMinkowski() {
     const { zt1, zt2, r, conv } = cache, sum = r.zt, blue = css("--blue");
     U.out("eta1", fmt(U.get.eta1(), 2)); U.out("eta2", fmt(U.get.eta2(), 2));
     const mode = U.get.view(), ink = css("--ink");
+    ({ x: OFF_X, y: OFF_Y, plus: OFF_PLUS } = LAYOUT[view.oblique ? "oblique" : "flat"]);
     view.clear();
     const IN = 0.55;  // in the oblique view the inputs stand lower, so the one in front hides less of the other
     const layers = [layerOf(zt1, { off: OFF_X, scale: IN }), layerOf(zt2, { off: OFF_Y, scale: IN })];
@@ -317,8 +324,8 @@ function demoMinkowski() {
       view.label("Y", V.add(OFF_Y, [0, -1.05]), { align: "center", size: 14, color: ink });
       view.label(title, V.add(OFF_S, [0, 2.6]), { align: "center", size: 14, color: ink });
     }
-    view.label("⊕", [-3.6, -0.55], { align: "center", size: 18 });
-    view.label("→", [-1.25, 0], { align: "center", size: 22 });
+    view.label("⊕", OFF_PLUS, { align: "center", size: 18 });
+    view.label("=", [-1.25, 0], { align: "center", size: 22 });
     view.drawHandles();
     U.stats([
       ["Generators of the sum", sum.z.G.length],
